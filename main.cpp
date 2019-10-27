@@ -15,16 +15,25 @@
 
 #include <GL/glut.h>  // GLUT, include glu.h and gl.h
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow *window);
 
 // settings
 const unsigned int SCR_WIDTH = 1366;
 const unsigned int SCR_HEIGHT = 768;
 
-Camera* camera = new Camera();
+Camera * camera = new Camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+
+
+
+// timing
+float deltaTime = 0.0f;	
+float lastFrame = 0.0f;
 
 
 const char* getVertexShaderSource()
@@ -247,13 +256,30 @@ void render(Camera* camera, std::vector<geometry*>* scene, int* shaderProgram, G
 
         // Entering Main Loop
     while(!glfwWindowShouldClose(window))
-    {
+    {   
+        // Black background
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+         
+         // per-frame time logic
+        // --------------------
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        // input
+        // -----
+        processInput(window);
+
          // Each frame, reset color of each pixel to glClearColor
         glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         glUseProgram(*shaderProgram);
 
-        //glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &perspectiveMatrix[0][0]);
+        glm::mat4 * view = camera->GetViewMatrix();
+        glm::mat4 * projection  = camera->GetProjectionMatrix();
+
 
         for (int i = 0; i <= scene->size() - 1; i++)
         {
@@ -261,8 +287,8 @@ void render(Camera* camera, std::vector<geometry*>* scene, int* shaderProgram, G
             geometry *element = scene->data()[i];
             glm::mat4 *matrix = element->getMatrix();
             glUniformMatrix4fv(*modelMatrixLocation, 1, GL_FALSE, &(*matrix)[0][0]);
-            glUniformMatrix4fv(*viewMatrixLocation, 1, GL_FALSE, &(*camera->getViewMatrix())[0][0]);
-            glUniformMatrix4fv(*projectionMatrixLocation, 1, GL_FALSE, &(*camera->getProjectionMatrix())[0][0]);
+            glUniformMatrix4fv(*viewMatrixLocation, 1, GL_FALSE, &(*view)[0][0]);
+            glUniformMatrix4fv(*projectionMatrixLocation, 1, GL_FALSE, &(*projection)[0][0]);
             glBindBuffer(GL_ARRAY_BUFFER, *element->getVbo());
             glVertexAttribPointer(0,        // attribute 0 matches aPos in Vertex Shader
                                   3,        // size
@@ -288,70 +314,10 @@ void render(Camera* camera, std::vector<geometry*>* scene, int* shaderProgram, G
         // Detect inputs
         glfwPollEvents();
         
-        
-
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) &&!(glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)) 
-        {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.0f,0.1f,0.0f));
-        }
-        
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)  &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) ) 
-        {   
-             glm::vec3 pos = camera->getPosition();
-             camera->setPosition(pos+glm::vec3(0.0f,-0.1f,0.0f));
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)) 
-        {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(-0.1f,0.0f,0.0f));
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS))
-        {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.1f,0.0f,0.0f));
-        }
-        if (glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) 
-        {   
-           glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.0f,0.0f,-0.1f));
-        }
-        if (glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) 
-        {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.0f,0.0f,0.1f));
-        }
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        {           
-            float rotationX = camera->getPitch();
-            camera->setPitch(rotationX + 0.4f);
-        }
-        
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        {           
-            float rotationX = camera->getPitch();
-            camera->setPitch(rotationX - 0.4f);
-        }
-        
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        {                                
-            float rotationY = camera->getYaw();
-            camera->setYaw(rotationY + 0.4f);
-
-        }
-
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        {           
-            float rotationY = camera->getYaw();
-            camera->setYaw(rotationY - 0.4f);
-        }
+    
         // End frame
         glfwSwapBuffers(window);
-        
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, true);
+       
     }
 
         
@@ -383,8 +349,8 @@ int main(int argc, char*argv[])
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
-    
 
     // Initialize GLEW
     glewExperimental = true; // Needed for core profile
@@ -394,13 +360,18 @@ int main(int argc, char*argv[])
         return -1;
     }
 
-    glfwSetCursorPosCallback(window, mouse_callback);
+    
 
     // tell GLFW to capture our mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    //glfwSetScrollCallback(window, scroll_callback);
 
-    // Black background
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
     
     
     // Compile and link shaders here ...
@@ -464,6 +435,30 @@ int main(int argc, char*argv[])
 	return 0;
 }
 
+void processInput(GLFWwindow *window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera->ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera->ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera->ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera->ProcessKeyboard(RIGHT, deltaTime);
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+// ---------------------------------------------------------------------------------------------
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and 
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
+}
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos){
     if (firstMouse)
     {
@@ -482,7 +477,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos){
         xoffset *= 0.1;
         yoffset *= 0.1;
 
-        camera->setYaw(camera->getYaw() + xoffset);
-        camera->setPitch(camera->getPitch() + xoffset);
+        camera->ProcessMouseMovement(xoffset, yoffset);
+
 
 }

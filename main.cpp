@@ -1,25 +1,39 @@
-#include <GL/glew.h>
-#include <GL/glu.h>
+//#include <GL/glew.h>
+#include <glad/glad.h>
+//#include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include <glm/gtx/string_cast.hpp>
+
+#ifndef GEOMETRY
+#define GEOMETRY
 #include "geometry.hpp"
+#endif
+
 #include <string.h>
 #include "Camera.hpp"
+#include "shader.h"
+#include "Car.h"
+#include <algorithm>
+#include <stdlib.h> 
+
 /*
  * OGL01Shape3D.cpp: 3D Shapes
  */
 
-#include <GL/glut.h>  // GLUT, include glu.h and gl.h
+//#include <GL/glut.h>  // GLUT, include glu.h and gl.h
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 // settings
 const unsigned int SCR_WIDTH = 1366;
 const unsigned int SCR_HEIGHT = 768;
+
+Car* car;
+geometry* gridGeo;
 
 Camera* camera = new Camera();
 float lastX = SCR_WIDTH / 2.0f;
@@ -61,68 +75,32 @@ const char* getFragmentShaderSource()
     "   FragColor = vec4(vertexColor.x, vertexColor.y, vertexColor.z, 1.0f) ;"
     "}";
 }
+ 
 
-int compileAndLinkShaders()
-{
-    // compile and link shader program
-    // return shader program id
-    // ------------------------------------
-
-
-    // vertex shader
-    int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const char* vertexShaderSource = getVertexShaderSource();
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    
-    // check for shader compile errors
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    
-    // fragment shader
-    int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const char* fragmentShaderSource = getFragmentShaderSource();
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    
-    // check for shader compile errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    
-    // link shaders
-    int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    
-    // check for linking errors
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-    
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    
-    return shaderProgram;
-}
-
-geometry* createVBO(std::string type)
+geometry* createGrid()
 {    
-     if(type == "grid"){
-        std::vector<float> vertexArray;
+        std::vector<float> vertexArray{50.0f,.0f,-50.0f,
+        .0f,1.0f,.0f,
+        .0f,1.0f,
+        50.0f,.0f,50.0f,
+        .0f,1.0f,.0f,
+        1.0f,1.0f,
+        -50.0f,.0f,-50.0f,
+        .0f,1.0f,.0f,
+        0.0f,.0f,
+        50.0f,.0f,50.0f,
+        .0f,1.0f,.0f,
+        1.0f,1.0f,
+        -50.0f,.0f,50.0f,
+        .0f,1.0f,.0f,
+        1.0f,.0f,
+        -50.0f,.0f,-50.0f,
+        .0f,1.0f,.0f,
+        .0f,.0f
+        };
         
+        
+        /*
         for(int x = -50; x<=50 ; x++){    
                 vertexArray.push_back(float(x));
                 vertexArray.push_back(0.0f);
@@ -152,201 +130,247 @@ geometry* createVBO(std::string type)
                 vertexArray.push_back(1.0f);
                 vertexArray.push_back(1.0f);
                 vertexArray.push_back(1.0f);
-        }
+        }*/
 
-        geometry* gridGeo = new geometry(&vertexArray, GL_LINES);
+        char* path = "grass-texture-1.jpg";
+        geometry* gridGeo = new geometry(&vertexArray, GL_TRIANGLES, false,NULL, path);
+        gridGeo->setColor(glm::vec3(.021f,0.77f,.10f));
         return gridGeo;
 
-    }
 
-    if(type == "cube"){
-        std::vector<float> vertexArr{
-            1.0f,-1.0f,-1.0f, // triangle 1 : begin
-            1.0f,0.0f,0.0f,
-            -1.0f,-1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f, // triangle 1 : end
-            1.0f, 1.0f,-1.0f,
-           1.0f,0.0f,0.0f,  // triangle 2 : begin
-            -1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,0.0f,0.0f, // triangle 2 : end
-            1.0f,-1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f,-1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f,-1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f,-1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            -1.0f, 1.0f, 1.0f,
-            1.0f,0.0f,0.0f,
-            1.0f,-.5f, 1.0f,
-            1.0f,0.0f,0.0f
-        };
-
-        geometry* cubeGeo = new geometry(&vertexArr , GL_TRIANGLES);
-
-        return cubeGeo;
-
-    }
 }
 
-void render(Camera* camera, std::vector<geometry*>* scene, int* shaderProgram, GLFWwindow* window, GLuint* modelMatrixLocation, GLuint* viewMatrixLocation, GLuint* projectionMatrixLocation){
+
+
+void rotateWheelX(){
+    geometry * wheel1 = car->getChildren()[1];
+            geometry * wheel2 = car->getChildren()[2];
+            glm::mat4 *matWheel1 = wheel1->getMatrix(); 
+            glm::mat4 *matWheel2 = wheel2->getMatrix();
+            glm::vec3 currentRotation = *wheel1->getRotation();
+            float rot = wheel1->getRotation()->x;
+            wheel1->matAuto = false;
+            wheel2->matAuto = false;
+            
+            glm::vec3 axis =  glm::cross(glm::vec3(glm::sin(currentRotation.y) , 0.0f , glm::cos(currentRotation.y)), glm::vec3(0.0f,1.0f,0.0f));
+            std::cout<<glm::to_string(axis) << std::endl;
+            *wheel1->getMatrix() = glm::rotate(*wheel1->getMatrix()  , 0.01f, axis);
+            *wheel2->getMatrix() = glm::rotate(*wheel2->getMatrix() , 0.01f,axis);
+            wheel1->getRotation()->x = rot + 0.01;
+
+
+
+}
+
+void rotateWheelY(){
+     geometry * wheel1 = car->getChildren()[1];
+            geometry * wheel2 = car->getChildren()[2];
+            glm::mat4 *matWheel1 = wheel1->getMatrix(); 
+            glm::mat4 *matWheel2 = wheel2->getMatrix();
+            wheel1->matAuto = false;
+            wheel2->matAuto = false;
+            glm::vec3 rot1 = *car->getChildren()[1]->getRotation();
+             glm::vec3 axis =  glm::cross(glm::vec3(glm::sin(.y) , 0.0f , glm::cos(currentRotation.y)), glm::vec3(0.0f,1.0f,0.0f))
+            *wheel1->getMatrix() = glm::rotate(*matWheel1 , 0.01f  , glm::vec3(0.0f,1.0f,0.0f));
+            *wheel2->getMatrix() = glm::rotate(*matWheel2 , 0.01f  , glm::vec3(0.0f,1.0f,0.0f));
+            wheel1->setRotation(rot1 + glm::vec3(0.0f,0.01f,0.0f));
+}
+
+void render(Camera* camera, std::vector<geometry*>* scene, Shader* shader, GLFWwindow* window){
     
 
         // Entering Main Loop
     while(!glfwWindowShouldClose(window))
-    {
-         // Each frame, reset color of each pixel to glClearColor
-        glClear(GL_COLOR_BUFFER_BIT);
+    {   
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(*shaderProgram);
-
+        shader->use();
         //glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &perspectiveMatrix[0][0]);
 
         for (int i = 0; i <= scene->size() - 1; i++)
         {
 
             geometry *element = scene->data()[i];
-            glm::mat4 *matrix = element->getMatrix();
-            glUniformMatrix4fv(*modelMatrixLocation, 1, GL_FALSE, &(*matrix)[0][0]);
-            glUniformMatrix4fv(*viewMatrixLocation, 1, GL_FALSE, &(*camera->getViewMatrix())[0][0]);
-            glUniformMatrix4fv(*projectionMatrixLocation, 1, GL_FALSE, &(*camera->getProjectionMatrix())[0][0]);
-            glBindBuffer(GL_ARRAY_BUFFER, *element->getVbo());
-            glVertexAttribPointer(0,        // attribute 0 matches aPos in Vertex Shader
-                                  3,        // size
-                                  GL_FLOAT, // type
-                                  GL_FALSE, // normalized?
-                                  6*sizeof(float),        // stride - each vertex contain 2 vec3 (position, color)
-                                  (void *)0 // array buffer offset
-            );
-            glEnableVertexAttribArray(0);
+            glm::mat4 *model = element->getMatrix();
+            glm::mat4 *view = camera->getViewMatrix();
+            glm::mat4 *proj = camera->getProjectionMatrix();
+            shader->setMat4("model", *model);
+            shader->setMat4("view", *view);
+            shader->setMat4("projection", *proj);
+            shader->setVec3("lightPos" , glm::vec3(0.0f,30.0f,0.0f));
+            shader->setVec3("viewPos" , camera->getPosition());
+            shader->setVec3("lightColor", glm::vec3(1.0f,1.0f,204.0f/255.0f));
+            shader->setVec3("objectColor" , element->getColor());
+            shader->setBool("isTextured", element->isTextured());
+            
+            if(element->isTextured()){
+                
 
-            glVertexAttribPointer(1,        // attribute 0 matches aPos in Vertex Shader
-                                  3,        // size
-                                  GL_FLOAT, // type
-                                  GL_FALSE, // normalized?
-                                  6*sizeof(float),        // stride - each vertex contain 2 vec3 (position, color)
-                                  (void *)(3*sizeof(float))// array buffer offset
-            );
-            glEnableVertexAttribArray(1);
+                glBindBuffer(GL_ARRAY_BUFFER, *element->getVbo());
+                glVertexAttribPointer(0,        // attribute 0 matches aPos in Vertex Shader
+                                    3,        // size
+                                    GL_FLOAT, // type
+                                    GL_FALSE, // normalized?
+                                    8*sizeof(float),        // stride - each vertex contain 2 vec3 (position, color)
+                                    (void *)0 // array buffer offset
+                );
+                glEnableVertexAttribArray(0);
 
-            glDrawArrays(element->getDrawEnum(), 0, element->getPositions()->size() / 6);
+                glVertexAttribPointer(1,        // attribute 0 matches aPos in Vertex Shader
+                                    3,        // size
+                                    GL_FLOAT, // type
+                                    GL_FALSE, // normalized?
+                                    8*sizeof(float),        // stride - each vertex contain 2 vec3 (position, color)
+                                    (void *)(3*sizeof(float))// array buffer offset
+                );
+                glEnableVertexAttribArray(1);
+
+                glBindTexture(GL_TEXTURE_2D, *element->getTexture());
+
+                glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+                glEnableVertexAttribArray(2);  
+
+                
+                if(element->isIndexed()){
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *element->getEbo());  
+                    glDrawElements(element->getDrawEnum(), element->getIndecies()->size() , GL_UNSIGNED_INT, 0);
+                }
+                else{
+                    glDrawArrays(element->getDrawEnum(), 0, element->getPositions()->size() / 8);
+                }
+            }
+            else{
+                glBindBuffer(GL_ARRAY_BUFFER, *element->getVbo());
+                glVertexAttribPointer(0,        // attribute 0 matches aPos in Vertex Shader
+                                    3,        // size
+                                    GL_FLOAT, // type
+                                    GL_FALSE, // normalized?
+                                    6*sizeof(float),        // stride - each vertex contain 2 vec3 (position, color)
+                                    (void *)0 // array buffer offset
+                );
+                glEnableVertexAttribArray(0);
+
+                glVertexAttribPointer(1,        // attribute 0 matches aPos in Vertex Shader
+                                    3,        // size
+                                    GL_FLOAT, // type
+                                    GL_FALSE, // normalized?
+                                    6*sizeof(float),        // stride - each vertex contain 2 vec3 (position, color)
+                                    (void *)(3*sizeof(float))// array buffer offset
+                );
+                glEnableVertexAttribArray(1);
+
+                
+                if(element->isIndexed()){
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *element->getEbo());  
+                    glDrawElements(element->getDrawEnum(), element->getIndecies()->size() , GL_UNSIGNED_INT, 0);
+                }
+                else{
+                    glDrawArrays(element->getDrawEnum(), 0, element->getPositions()->size() / 6);
+                }
+            }
+
         }
 
         // Detect inputs
         glfwPollEvents();
         
         
-
+        /*
+         *Listen for input from keyboard  
+         */
         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) &&!(glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)) 
         {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.0f,0.1f,0.0f));
-        }
-        
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)  &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) ) 
-        {   
-             glm::vec3 pos = camera->getPosition();
-             camera->setPosition(pos+glm::vec3(0.0f,-0.1f,0.0f));
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)) 
-        {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(-0.1f,0.0f,0.0f));
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS))
-        {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.1f,0.0f,0.0f));
-        }
-        if (glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) 
-        {   
-           glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.0f,0.0f,-0.1f));
-        }
-        if (glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) 
-        {   
-            glm::vec3 pos = camera->getPosition();
-            camera->setPosition(pos+glm::vec3(0.0f,0.0f,0.1f));
-        }
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        {           
             float rotationX = camera->getPitch();
             camera->setPitch(rotationX + 0.4f);
         }
         
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        {           
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)  &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) ) 
+        {   
+                      
             float rotationX = camera->getPitch();
             camera->setPitch(rotationX - 0.4f);
         }
-        
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        {                                
-            float rotationY = camera->getYaw();
-            camera->setYaw(rotationY + 0.4f);
 
-        }
-
-        if(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        {           
-            float rotationY = camera->getYaw();
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)) 
+        {   
+             float rotationY = camera->getYaw();
             camera->setYaw(rotationY - 0.4f);
         }
+
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS &&!(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS))
+        {   
+                                         
+            float rotationY = camera->getYaw();
+            camera->setYaw(rotationY + 0.4f);
+        }
+        if (glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) 
+        {   
+           glm::vec3 pos = camera->getPosition();
+            camera->setPosition(pos-camera->getDirection() *0.1f);
+        }
+        if (glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) 
+        {   
+            glm::vec3 pos = camera->getPosition();
+            camera->setPosition(pos+ camera->getDirection() *0.1f) ;
+        }
+        
+         if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS )
+        {           
+            rotateWheelX();
+
+            //wheel1->setRotation(glm::vec3(0.01f,0.0f,0.0f) + currentRotation);
+            //wheel2->setRotation(glm::vec3(0.01f,0.0f,0.0f) + currentRotation);
+        
+        } 
+
+        if(glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS )
+        {           
+            glm::vec3 currentScale = *car->getScale();
+            car->setScale( currentScale + glm::vec3(0.005f,0.005f,0.005f));
+        } 
+        if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS )
+        {           
+            glm::vec3 currentScale = *car->getScale();
+            car->setScale(currentScale - glm::vec3(0.005f,0.005f,0.005f));
+        } 
+        
+         if(glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS )
+        {   
+            
+           rotateWheelY();
+
+        } 
+
+         if(glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS )
+        {           
+            //glm::vec3 rot1 = *car->getChildren()[1]->getRotation();
+            //car->getChildren()[1]->setRotation(rot1 + glm::vec3(0.0f,-0.01f,0.0f));
+        } 
+
+        if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS )
+        {   
+            srand(1);
+            car->setPosition(glm::vec3((rand()%100)/2.0f - 50.0, 0.0f, (rand()%100)/2.0f -50.0));
+        } 
+
+        if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS )
+        {   
+            glm::vec3 currentPos = *car->getPosition(); 
+            car->setPosition(currentPos);
+        } 
+
+        if(glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS )
+        {   
+            //std::vector<geometry*>  children = car->getChildren();
+            //for(int i=0; i<children.size() ; i++){
+             //   children[i]->setDrawEnum(GL_LINES);
+           // }
+            //gridGeo->setDrawEnum(GL_TRIANGLES);
+            //glm::mat4 * wheelMat = car->getChildren()[1]->getMatrix();
+            //glm::rotate(*wheelMat , glm::radians(45))
+            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        } 
         // End frame
         glfwSwapBuffers(window);
         
@@ -358,10 +382,16 @@ void render(Camera* camera, std::vector<geometry*>* scene, int* shaderProgram, G
 }
 
 
+//std::vector<float> cylinderPositions {0,0.5,1,0,0,1,0.7071067690849304,0.5,0.7071067690849304,0.7071067690849304,0,0.7071067690849304,1,0.5,0,1,0,0,0.7071067690849304,0.5,-0.7071067690849304,0.7071067690849304,0,-0.7071067690849304,0,0.5,-1,0,0,-1,-0.7071067690849304,0.5,-0.7071067690849304,-0.7071067690849304,0,-0.7071067690849304,-1,0.5,-0,-1,0,-0,-0.7071067690849304,0.5,0.7071067690849304,-0.7071067690849304,0,0.7071067690849304,-0,0.5,1,-0,0,1,0,-0.5,1,0,0,1,0.7071067690849304,-0.5,0.7071067690849304,0.7071067690849304,0,0.7071067690849304,1,-0.5,0,1,0,0,0.7071067690849304,-0.5,-0.7071067690849304,0.7071067690849304,0,-0.7071067690849304,0,-0.5,-1,0,0,-1,-0.7071067690849304,-0.5,-0.7071067690849304,-0.7071067690849304,0,-0.7071067690849304,-1,-0.5,-0,-1,0,-0,-0.7071067690849304,-0.5,0.7071067690849304,-0.7071067690849304,0,0.7071067690849304,-0,-0.5,1,-0,0,1,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,1,0,1,0,0.7071067690849304,0.5,0.7071067690849304,0,1,0,1,0.5,0,0,1,0,0.7071067690849304,0.5,-0.7071067690849304,0,1,0,0,0.5,-1,0,1,0,-0.7071067690849304,0.5,-0.7071067690849304,0,1,0,-1,0.5,-0,0,1,0,-0.7071067690849304,0.5,0.7071067690849304,0,1,0,-0,0.5,1,0,1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,1,0,-1,0,0.7071067690849304,-0.5,0.7071067690849304,0,-1,0,1,-0.5,0,0,-1,0,0.7071067690849304,-0.5,-0.7071067690849304,0,-1,0,0,-0.5,-1,0,-1,0,-0.7071067690849304,-0.5,-0.7071067690849304,0,-1,0,-1,-0.5,-0,0,-1,0,-0.7071067690849304,-0.5,0.7071067690849304,0,-1,0,-0,-0.5,1,0,-1,0};
+//std::vector<int> cylinderIndecies {0,9,1,9,10,1,1,10,2,10,11,2,2,11,3,11,12,3,3,12,4,12,13,4,4,13,5,13,14,5,5,14,6,14,15,6,6,15,7,15,16,7,7,16,8,16,17,8,26,27,18,27,28,19,28,29,20,29,30,21,30,31,22,31,32,23,32,33,24,33,34,25,44,43,35,45,44,36,46,45,37,47,46,38,48,47,39,49,48,40,50,49,41,51,50,42};
+//std::vector<float> cylinderPositions {0,0.5,1,0.7071067690849304,0.5,0.7071067690849304,1,0.5,6.123234262925839,0.7071067690849304,0.5,-0.7071067690849304,1.2246468525851679,0.5,-1,-0.7071067690849304,0.5,-0.7071067690849304,-1,0.5,-1.8369701465288538,-0.7071067690849304,0.5,0.7071067690849304,-2.4492937051703357 ,0.5,1,0,-0.5,1,0.7071067690849304,-0.5,0.7071067690849304,1,-0.5,6.123234262925839,0.7071067690849304,-0.5,-0.7071067690849304,0,-0.5,-1,-0.7071067690849304,-0.5,-0.7071067690849304,-1,-0.5,-0,-0.7071067690849304,-0.5,0.7071067690849304,-0,-0.5,1,0,0.5,0,0,0.5,0,0,0.5,0,0,0.5,0,0,0.5,0,0,0.5,0,0,0.5,0,0,0.5,0,0,0.5,1,0.7071067690849304,0.5,0.7071067690849304,1,0.5,6.123234262925839,0.7071067690849304,0.5,-0.7071067690849304,0,0.5,-1,-0.7071067690849304,0.5,-0.7071067690849304,-1,0.5,-0,-0.7071067690849304,0.5,0.7071067690849304,-0,0.5,1,0,-0.5,0,0,-0.5,0,0,-0.5,0,0,-0.5,0,0,-0.5,0,0,-0.5,0,0,-0.5,0,0,-0.5,0,0,-0.5,1,0.7071067690849304,-0.5,0.7071067690849304,1,-0.5,6.123234262925839,0.7071067690849304,-0.5,-0.7071067690849304,0,-0.5,-1,-0.7071067690849304,-0.5,-0.7071067690849304,-1,-0.5,-0,-0.7071067690849304,-0.5,0.7071067690849304,-0,-0.5,1};
+
 int main(int argc, char*argv[])
 {
+    
     // Initialize GLFW and OpenGL version
     glfwInit();
+
 
 #if defined(PLATFORM_OSX)	
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); 
@@ -385,14 +415,15 @@ int main(int argc, char*argv[])
     }
     glfwMakeContextCurrent(window);
     
-
-    // Initialize GLEW
-    glewExperimental = true; // Needed for core profile
-    if (glewInit() != GLEW_OK) {
-        std::cerr << "Failed to create GLEW" << std::endl;
-        glfwTerminate();
+   
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
 
     glfwSetCursorPosCallback(window, mouse_callback);
 
@@ -404,65 +435,34 @@ int main(int argc, char*argv[])
     
     
     // Compile and link shaders here ...
-    int shaderProgram = compileAndLinkShaders();
+    Shader * shaderProgram = new Shader("shaders/vertex.glsl", "shaders/fragment.glsl");
+
 
     //Create vertex array object
     GLuint vertexArrayObject;
     glGenVertexArrays(1, &vertexArrayObject);
     glBindVertexArray(vertexArrayObject);
-    
-    //SetUp car geometry
-    geometry* mainBody = createVBO("cube");
-    mainBody->setMatrix(glm::scale(glm::mat4(1.0f),glm::vec3(1.0f, 2.0f, 3.0f)));
-    geometry* leftBackWheel = new geometry(mainBody->getVbo(), GL_TRIANGLES);
-    geometry* rightBackWheel = new geometry(mainBody->getVbo(), GL_TRIANGLES);
-    geometry* leftFrontWheel = new geometry(mainBody->getVbo(), GL_TRIANGLES);
-    geometry* rightFrontlefWheel = new geometry(mainBody->getVbo(), GL_TRIANGLES);
-    geometry*  roof = new geometry(mainBody->getVbo(), GL_TRIANGLES);
-    roof->setMatrix(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f,1.0f,2.0f)), glm::vec3(.0f,3.5f,0.0f)));
-    roof->setPositions(mainBody->getPositions());
-    geometry* trunk= new geometry(mainBody->getVbo(), GL_TRIANGLES);
-    trunk->setMatrix(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f,1.0f,2.0f)), glm::vec3(.0f,.0f,-2.25f)));
-    trunk->setPositions(mainBody->getPositions());
-    geometry* bonnet = new geometry(mainBody->getVbo(), GL_TRIANGLES);
-    bonnet->setMatrix(glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f,1.0f,2.0f)), glm::vec3(.0f,.0f,2.25f)));
-    bonnet->setPositions(mainBody->getPositions());
-
-    //SetUp grid geometry
-    geometry* gridGeo = createVBO("grid");
-
-    //Put all cars parts in one vector for applying transformation on whole car
-    std::vector<geometry*> car;
-    car.push_back(trunk);
-    car.push_back(bonnet);
-    car.push_back(mainBody);
-    car.push_back(roof);
-    car.push_back(leftBackWheel);
-    car.push_back(rightBackWheel);
-    car.push_back(leftFrontWheel);
-    car.push_back(rightFrontlefWheel);
-
-    //SetUp axis
-    //float();
-
-    std::vector<geometry*> scene;
-    scene.push_back(gridGeo);
-    scene.push_back(mainBody);
-    scene.push_back(bonnet);
-    scene.push_back(trunk);
-    scene.push_back(roof);
-    
-    GLuint modelMatrixLocation = glGetUniformLocation(shaderProgram, "modelMatrix");
-    GLuint viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix");
-    GLuint projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
+    glm::mat4 rotation  =  glm::rotate(glm::mat4(1.0f),glm::radians(45.0f) , glm::vec3(0.0f,.0f,1.0f));
        
-    render(camera, &scene, &shaderProgram, window, &modelMatrixLocation, &viewMatrixLocation, &projectionMatrixLocation);
+
+    //SetUp grid and car
+    gridGeo = createGrid();
+    car  = new Car();
+    //car->setPosition(*car->getPosition() + glm::vec3(0.0f,0.40f,0.0f));
+    
+    std::vector<geometry*> scene;    
+    scene.push_back(gridGeo);
+    car->addToScene(&scene);
+           
+    render(camera, &scene, shaderProgram, window);
     
     // Shutdown GLFW
     glfwTerminate();
     
 	return 0;
 }
+
+
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos){
     if (firstMouse)
@@ -481,8 +481,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos){
 
         xoffset *= 0.1;
         yoffset *= 0.1;
-
-        camera->setYaw(camera->getYaw() + xoffset);
-        camera->setPitch(camera->getPitch() + xoffset);
+        
+        float yaw = camera->getYaw();
+        float pitch =  camera->getPitch();
+        camera->setYaw(yaw + xoffset);
+        camera->setPitch(pitch + yoffset);
 
 }

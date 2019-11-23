@@ -28,11 +28,12 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = specularStrength * spec * lightColor;  
+    vec3 specular = specularStrength * spec * lightColor; 
+     
     if(isTextured){
-    vec3 lighting = (ambient + diffuse + specular);
-    vec4 result = vec4(lighting.x,lighting.y,lighting.z,1.0) * texture(ourTexture, Texture);
-    FragColor = vec4(result);
+        vec3 lighting = (ambient + diffuse + specular);
+        vec4 result = vec4(lighting.x,lighting.y,lighting.z,1.0) * texture(ourTexture, Texture);
+        FragColor = vec4(result);
     }
     else{
         vec3 result = (ambient + diffuse + specular) * objectColor;

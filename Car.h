@@ -69,7 +69,7 @@ class Car{
     void setScale(glm::vec3);
     glm::vec3 * getScale();
     void setPosition(glm::vec3);
-    glm::vec3 * getPosition();
+    glm::vec3  getPosition();
     void setRotation(glm::vec3);
     glm::vec3 * getRotation();
 
@@ -138,8 +138,8 @@ void Car::setPosition(glm::vec3 vec){
     updateMatrix();
 }
 
-glm::vec3 * Car::getPosition(){
-    return &position;
+glm::vec3  Car::getPosition(){
+    return position;
 }
 
 void Car::setRotation(glm::vec3 vec){

@@ -40,43 +40,6 @@ float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
-
-const char* getVertexShaderSource()
-{
-    // Insert Shaders here ...
-    // For now, you use a string for your shader code, in the assignment, shaders will be stored in .glsl files
-                return 
-                "#version 330 core\n"
-                "layout (location = 0) in vec3 aPos;"
-                "layout (location = 1) in vec3 aColor;"
-                " out vec3 vertexColor;"
-                //"uniform mat4 worldMatrix = mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, .5, 0.0, 0.0, 0.0, .0, 1.0);"
-                "uniform mat4 modelMatrix = mat4(1.0);"
-                "uniform mat4 viewMatrix = mat4(1.0);"
-                "uniform mat4 projectionMatrix = mat4(1.0);"
-                ""
-                ""
-                "void main()"
-                "{"
-                "mat4 modelViewProjection = projectionMatrix * viewMatrix * modelMatrix;"
-                "gl_Position = modelViewProjection* vec4(aPos.x, aPos.y, aPos.z, 1.0f);"
-                "vertexColor = aColor;"
-                "}";
-}
-
-const char* getFragmentShaderSource()
-{
-    return
-    "#version 330 core\n"
-    "in vec3 vertexColor;"
-    "out vec4 FragColor;"
-    "void main()"
-    "{"
-    "   FragColor = vec4(vertexColor.x, vertexColor.y, vertexColor.z, 1.0f) ;"
-    "}";
-}
- 
-
 geometry* createGrid()
 {    
         std::vector<float> vertexArray{50.0f,.0f,-50.0f,
@@ -141,7 +104,7 @@ geometry* createGrid()
 }
 
 
-
+/*
 void rotateWheelX(){
     geometry * wheel1 = car->getChildren()[1];
             geometry * wheel2 = car->getChildren()[2];
@@ -161,7 +124,8 @@ void rotateWheelX(){
 
 
 }
-
+*/
+/*
 void rotateWheelY(){
      geometry * wheel1 = car->getChildren()[1];
             geometry * wheel2 = car->getChildren()[2];
@@ -170,11 +134,11 @@ void rotateWheelY(){
             wheel1->matAuto = false;
             wheel2->matAuto = false;
             glm::vec3 rot1 = *car->getChildren()[1]->getRotation();
-             glm::vec3 axis =  glm::cross(glm::vec3(glm::sin(.y) , 0.0f , glm::cos(currentRotation.y)), glm::vec3(0.0f,1.0f,0.0f))
+            glm::vec3 axis =  glm::cross(glm::vec3(glm::sin(curren.y) , 0.0f , glm::cos(currentRotation.y)), glm::vec3(0.0f,1.0f,0.0f))
             *wheel1->getMatrix() = glm::rotate(*matWheel1 , 0.01f  , glm::vec3(0.0f,1.0f,0.0f));
             *wheel2->getMatrix() = glm::rotate(*matWheel2 , 0.01f  , glm::vec3(0.0f,1.0f,0.0f));
             wheel1->setRotation(rot1 + glm::vec3(0.0f,0.01f,0.0f));
-}
+}*/
 
 void render(Camera* camera, std::vector<geometry*>* scene, Shader* shader, GLFWwindow* window){
     
@@ -314,62 +278,20 @@ void render(Camera* camera, std::vector<geometry*>* scene, Shader* shader, GLFWw
             glm::vec3 pos = camera->getPosition();
             camera->setPosition(pos+ camera->getDirection() *0.1f) ;
         }
-        
-         if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS )
-        {           
-            rotateWheelX();
-
-            //wheel1->setRotation(glm::vec3(0.01f,0.0f,0.0f) + currentRotation);
-            //wheel2->setRotation(glm::vec3(0.01f,0.0f,0.0f) + currentRotation);
-        
-        } 
-
-        if(glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS )
-        {           
-            glm::vec3 currentScale = *car->getScale();
-            car->setScale( currentScale + glm::vec3(0.005f,0.005f,0.005f));
-        } 
-        if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS )
-        {           
-            glm::vec3 currentScale = *car->getScale();
-            car->setScale(currentScale - glm::vec3(0.005f,0.005f,0.005f));
-        } 
-        
-         if(glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS )
-        {   
-            
-           rotateWheelY();
-
-        } 
-
-         if(glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS )
-        {           
-            //glm::vec3 rot1 = *car->getChildren()[1]->getRotation();
-            //car->getChildren()[1]->setRotation(rot1 + glm::vec3(0.0f,-0.01f,0.0f));
-        } 
-
-        if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS )
-        {   
-            srand(1);
-            car->setPosition(glm::vec3((rand()%100)/2.0f - 50.0, 0.0f, (rand()%100)/2.0f -50.0));
-        } 
-
-        if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS )
-        {   
-            glm::vec3 currentPos = *car->getPosition(); 
-            car->setPosition(currentPos);
-        } 
+    
 
         if(glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS )
         {   
-            //std::vector<geometry*>  children = car->getChildren();
-            //for(int i=0; i<children.size() ; i++){
-             //   children[i]->setDrawEnum(GL_LINES);
-           // }
+            
+            std::vector<geometry*>  children = car->getChildren();
+            for(int i=0; i<children.size() ; i++){
+                children[i]->setDrawEnum(GL_POINTS);
+           
             //gridGeo->setDrawEnum(GL_TRIANGLES);
+            }
             //glm::mat4 * wheelMat = car->getChildren()[1]->getMatrix();
             //glm::rotate(*wheelMat , glm::radians(45))
-            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+            //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
         } 
         // End frame
         glfwSwapBuffers(window);
@@ -442,7 +364,6 @@ int main(int argc, char*argv[])
     GLuint vertexArrayObject;
     glGenVertexArrays(1, &vertexArrayObject);
     glBindVertexArray(vertexArrayObject);
-    glm::mat4 rotation  =  glm::rotate(glm::mat4(1.0f),glm::radians(45.0f) , glm::vec3(0.0f,.0f,1.0f));
        
 
     //SetUp grid and car

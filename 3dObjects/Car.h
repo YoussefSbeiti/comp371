@@ -4,7 +4,7 @@
 #include <iostream> 
 #include <vector>
 #include <string>
-#include "geometry.hpp"
+#include "../Mesh/Mesh.hpp"
 
 
 std::vector<float> cylinderPositions {0,0.5,1,0,0,1,0.7071067690849304,0.5,0.7071067690849304,0.7071067690849304,0,0.7071067690849304,1,0.5,0,1,0,0,0.7071067690849304,0.5,-0.7071067690849304,0.7071067690849304,0,-0.7071067690849304,0,0.5,-1,0,0,-1,-0.7071067690849304,0.5,-0.7071067690849304,-0.7071067690849304,0,-0.7071067690849304,-1,0.5,-0,-1,0,-0,-0.7071067690849304,0.5,0.7071067690849304,-0.7071067690849304,0,0.7071067690849304,-0,0.5,1,-0,0,1,0,-0.5,1,0,0,1,0.7071067690849304,-0.5,0.7071067690849304,0.7071067690849304,0,0.7071067690849304,1,-0.5,0,1,0,0,0.7071067690849304,-0.5,-0.7071067690849304,0.7071067690849304,0,-0.7071067690849304,0,-0.5,-1,0,0,-1,-0.7071067690849304,-0.5,-0.7071067690849304,-0.7071067690849304,0,-0.7071067690849304,-1,-0.5,-0,-1,0,-0,-0.7071067690849304,-0.5,0.7071067690849304,-0.7071067690849304,0,0.7071067690849304,-0,-0.5,1,-0,0,1,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,1,0,1,0,0.7071067690849304,0.5,0.7071067690849304,0,1,0,1,0.5,0,0,1,0,0.7071067690849304,0.5,-0.7071067690849304,0,1,0,0,0.5,-1,0,1,0,-0.7071067690849304,0.5,-0.7071067690849304,0,1,0,-1,0.5,-0,0,1,0,-0.7071067690849304,0.5,0.7071067690849304,0,1,0,-0,0.5,1,0,1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,1,0,-1,0,0.7071067690849304,-0.5,0.7071067690849304,0,-1,0,1,-0.5,0,0,-1,0,0.7071067690849304,-0.5,-0.7071067690849304,0,-1,0,0,-0.5,-1,0,-1,0,-0.7071067690849304,-0.5,-0.7071067690849304,0,-1,0,-1,-0.5,-0,0,-1,0,-0.7071067690849304,-0.5,0.7071067690849304,0,-1,0,-0,-0.5,1,0,-1,0};
@@ -57,115 +57,67 @@ std::vector<float> cubePositions {
 
 class Car{
     private: 
-    std::vector<geometry*> children;
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 rotation = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f,1.0f,1.0f);
-    glm::mat4 matrix = glm::mat4(1.0f);
+    Mesh * mesh;
 
     public:
     Car();
-    void addToScene(std::vector<geometry*> *);
-    void setScale(glm::vec3);
-    glm::vec3 * getScale();
-    void setPosition(glm::vec3);
-    glm::vec3  getPosition();
-    void setRotation(glm::vec3);
-    glm::vec3 * getRotation();
 
-    std::vector<geometry*> getChildren();
-
-    void updateMatrix();
+    Mesh* getMesh();
+    
    
 };
 
-void Car::addToScene(std::vector<geometry*> * scene){
-    for(int i= 0; i<children.size(); i++){
-       scene->push_back(children[i]);
-    }
-}
-
 Car::Car(){
-    geometry* mainBody = new geometry(&cubePositions, GL_TRIANGLES, false, NULL, NULL);
-    mainBody->setMatrix(glm::scale(glm::translate(glm::mat4(1.0f),glm::vec3(.0f, 1.0f, .0f)), glm::vec3(1.0f,2.0f,2.0f)));
-    children.push_back(mainBody);
-    geometry* leftBackWheel = new geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
-    //leftBackWheel->setMatrix(glm::scale(glm::rotate(glm::translate(glm::mat4(1.0f),glm::vec3(-.625f, 0.0f + 0.0f , 1.0f)), glm::radians(90.0f) , glm::vec3(0.0f,0.0f,1.0f)), glm::vec3(0.5f,.25f,.5f)));
+    Material * carMat = new Material(glm::vec3(0.1f), glm::vec3(0.5f) , glm::vec3(0.5f), 2.0f, glm::vec3(0.f,1.000f,0.1f) );
+    Geometry* mainBodyGeo = new Geometry(&cubePositions, GL_TRIANGLES, false, NULL, NULL);
+    Mesh * mainBody = new Mesh(mainBodyGeo , carMat); 
+    //mainBody->setLocalMatrix(glm::scale(glm::translate(glm::mat4(1.0f),glm::vec3(.0f, 1.0f, .0f)), glm::vec3(1.0f,2.0f,2.0f)));
+    //mainBody->add(mainBody);
+    mainBody->setPosition(glm::vec3(.0f,1.5f,.0f));
+    mainBody->setScale(glm::vec3(1.0,2.0,2.0));
+    Geometry* leftBackWheelGeo = new Geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
+    Mesh* leftBackWheel = new Mesh(leftBackWheelGeo , carMat);
     leftBackWheel->setScale(glm::vec3(0.5f,.25f,.5f));
     leftBackWheel->setRotation(glm::vec3(.0f,.0f,glm::radians(90.0f)));
-    leftBackWheel->setPosition(glm::vec3(-.625f, 0.0f + 0.0f , 1.0f));
-    children.push_back(leftBackWheel);
-    geometry* rightBackWheel = new geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
-    //rightBackWheel->setMatrix(glm::scale(glm::rotate(glm::translate(glm::mat4(1.0f),glm::vec3(.625f, 0.0f + 0.0f , 1.0f)), glm::radians(90.0f) , glm::vec3(0.0f,0.0f,1.0f)), glm::vec3(0.5f,.25f,.5f)));
+    leftBackWheel->setPosition(glm::vec3(-.625f, - 0.5f , 1.0f));
+    mainBody->add(leftBackWheel);
+    Geometry* rightBackWheelGeo = new Geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
+    Mesh * rightBackWheel = new Mesh(rightBackWheelGeo, carMat);
     rightBackWheel->setScale(glm::vec3(0.5f,.25f,.5f));
     rightBackWheel->setRotation(glm::vec3(.0f,.0f,glm::radians(90.0f)));
-    rightBackWheel->setPosition(glm::vec3(.625f, 0.0f + 0.0f , 1.0f));
-    children.push_back(rightBackWheel);
-    geometry* leftFrontWheel = new geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
-    //leftFrontWheel->setMatrix(glm::scale(glm::rotate(glm::translate(glm::mat4(1.0f),glm::vec3(-.625f, 0.0f + 0.0f , -1.0f)), glm::radians(90.0f) , glm::vec3(0.0f,0.0f,1.0f)), glm::vec3(0.5f,.25f,.5f)));
+    rightBackWheel->setPosition(glm::vec3(.625f, -0.5f , 1.0f));
+    mainBody->add(rightBackWheel);
+    Geometry* leftFrontWheelGeo = new Geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
+    Mesh* leftFrontWheel = new Mesh(leftFrontWheelGeo , carMat);
     leftFrontWheel->setScale(glm::vec3(0.5f,.25f,.5f));
     leftFrontWheel->setRotation(glm::vec3(.0f,.0f,glm::radians(90.0f)));
-    leftFrontWheel->setPosition(glm::vec3(-.625f, 0.0f + 0.0f , -1.0f));
-    children.push_back(leftFrontWheel);
-    geometry* rightFrontWheel = new geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
-    //rightFrontWheel->setMatrix(glm::scale(glm::rotate(glm::translate(glm::mat4(1.0f),glm::vec3(.625f, 0.0f + 0.0f , -1.0f)), glm::radians(90.0f) , glm::vec3(0.0f,0.0f,1.0f)), glm::vec3(0.5f,.25f,.5f)));
+    leftFrontWheel->setPosition(glm::vec3(-.625f, - 0.5f , -1.0f));
+    mainBody->add(leftFrontWheel);
+    Geometry* rightFrontWheelGeo = new Geometry(&cylinderPositions, GL_TRIANGLES , true, &cylinderIndecies,NULL);
+    Mesh* rightFrontWheel = new Mesh(rightFrontWheelGeo , carMat);
     rightFrontWheel->setScale(glm::vec3(0.5f,.25f,.5f));
     rightFrontWheel->setRotation(glm::vec3(.0f,.0f,glm::radians(90.0f)));
-    rightFrontWheel->setPosition(glm::vec3(.625f, 0.0f + 0.0f , -1.0f));
-    children.push_back(rightFrontWheel);
-    geometry*  roof = new geometry(mainBody);
-    roof->setMatrix(glm::scale(glm::translate(glm::mat4(1.0f),glm::vec3(.0f, 2.0f + 0.5f , .0f)), glm::vec3(1.0f,1.0f,1.5f)));
-    children.push_back(roof);
-    geometry* trunk= new geometry(mainBody);
-    trunk->setMatrix(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(.0f,.5f,1.25f)), glm::vec3(1.0f,1.0f,1.5f)));
-    children.push_back(trunk);
-    geometry* bonnet = new geometry(mainBody);
-    bonnet->setMatrix(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(.0f,.5f,-1.25f)), glm::vec3(1.0f,1.0f,1.5f)));
-    children.push_back(bonnet);
+    rightFrontWheel->setPosition(glm::vec3(.625f, -.5f , -1.0f));
+    mainBody->add(rightFrontWheel);
+    Geometry*  roofGeo =  new Geometry(&cubePositions, GL_TRIANGLES, false, NULL, NULL);
+    Mesh* roof = new Mesh(roofGeo , carMat);
+    //roof->setLocalMatrix(glm::scale(glm::translate(glm::mat4(1.0f),glm::vec3(.0f, 2.0f + 0.5f , .0f)), glm::vec3(1.0f,1.0f,1.0f)));
+    roof->setPosition(glm::vec3(.0f,1.0f,.0f));
+    mainBody->add(roof);
+    Geometry* trunkGeo= new Geometry(&cubePositions, GL_TRIANGLES, false, NULL, NULL);
+    Mesh* trunk = new Mesh(trunkGeo , carMat);
+    trunk->setPosition(glm::vec3(.0f,.0f,1.0f));
+    //trunk->setLocalMatrix(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(.0f,.5f,1.25f)), glm::vec3(1.0f,1.0f,1.0f)));
+    mainBody->add(trunk);
+    Geometry* bonnetGeo = new Geometry(&cubePositions, GL_TRIANGLES, false, NULL, NULL);
+    Mesh* bonnet = new Mesh(bonnetGeo , carMat);
+    bonnet->setPosition(glm::vec3(.0f,.0f,-1.0f));
+    //bonnet->setLocalMatrix(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(.0f,.5f,-1.25f)), glm::vec3(1.0f,1.0f,1.0f)));
+    mainBody->add(bonnet);
+
+    mesh = mainBody;
 }
 
-void Car::setScale(glm::vec3 vec){
-   scale = vec;
-   updateMatrix();
+Mesh* Car::getMesh(){
+    return mesh;
 }
-
-glm::vec3 * Car::getScale(){
-    return &scale;
-}
-
-void Car::setPosition(glm::vec3 vec){
-    position = vec;
-    updateMatrix();
-}
-
-glm::vec3  Car::getPosition(){
-    return position;
-}
-
-void Car::setRotation(glm::vec3 vec){
-    rotation = vec;
-    updateMatrix();
-}
-
-glm::vec3* Car::getRotation(){
-    return &rotation;
-}
-
-void Car::updateMatrix(){
-    glm::mat4 translateMat = glm::translate(glm::mat4(1.0f) , position);
-    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f) , scale);
-    glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f) , rotation.x, glm::vec3(1.0f,.0f,.0f));
-    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f) , rotation.y, glm::vec3(.0f,1.0f,.0f));
-    glm::mat4 rotateZ = glm::rotate(glm::mat4(1.0f) , rotation.z, glm::vec3(.0f,.0f,1.0f));
-    matrix = translateMat * rotateX  * rotateY * rotateZ * scaleMat;
-    for(int i= 0; i<children.size(); i++){
-        glm::mat4* childMat = children[i]->getMatrix();
-        *childMat = matrix * *childMat;
-    }
-}
-
-std::vector<geometry*> Car::getChildren(){
-    return children;
-}
-
-

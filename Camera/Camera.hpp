@@ -16,7 +16,7 @@ private:
     float roll = .0f;
     float fov = glm::radians(45.0f);
 
-    glm::mat4 projectionMatrix = glm::perspective(fov,1.0f,0.1f,100.0f);;
+    glm::mat4 projectionMatrix = glm::perspective(fov,1.0f,0.1f,200.0f);;
     glm::mat4 viewMatrix = glm::mat4(1.0);
 
     glm::vec3 position = glm::vec3(.0f);

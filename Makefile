@@ -1,5 +1,5 @@
 # OBJS specifies which files to compile as part of the project
-OBJS = main.cpp geometry.hpp geometry.cpp Camera.hpp Camera.cpp shader.h glad.c stb_image.h
+OBJS = main.cpp Geometry/Geometry.hpp Geometry/Geometry.cpp Camera/Camera.hpp Camera/Camera.cpp Shader/Shader.h Glad/glad.c Geometry/stb_image.h Material/Material.hpp Mesh/Mesh.hpp Mesh/Mesh.cpp 3dObjects/Car.h
 
 # CC specifies which compiler we're using
 CC = g++ -std=c++11

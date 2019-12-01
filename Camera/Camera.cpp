@@ -93,6 +93,14 @@ glm::mat4* Camera::getViewMatrix(){
 	return &viewMatrix;
 } 
 
+void Camera::setViewMatrix(glm::mat4 mat){
+	viewMatrix = mat;
+}
+
+void Camera::setProjectionMatrix(glm::mat4 mat){
+	projectionMatrix = mat;
+}
+
 glm::mat4* Camera::getProjectionMatrix(){
 	return &projectionMatrix;
 } 

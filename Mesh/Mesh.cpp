@@ -4,33 +4,34 @@ Mesh::Mesh(Geometry* geo , Material* mat){
     material = new Material();
     *material = *mat;
     geometry = geo;
+    //orientation = new Orientation();
 }
 
 void Mesh::setScale(glm::vec3 vec){
-   scale = vec;
+   *scale = vec;
    updateMatrix();
 }
 
 glm::vec3 * Mesh::getScale(){
-    return &scale;
+    return scale;
 }
 
 void Mesh::setPosition(glm::vec3 vec){
-    position = vec;
+    *position = vec;
     updateMatrix();
 }
 
 glm::vec3 * Mesh::getPosition(){
-    return &position;
+    return position;
 }
 
 void Mesh::setRotation(glm::vec3 vec){
-    rotation = vec;
+    *rotation = vec;
     updateMatrix();
 }
 
-glm::vec3* Mesh::getRotation(){
-    return &rotation;
+glm::vec3 * Mesh::getRotation(){
+    return rotation;
 }
 
 glm::mat4 Mesh::getLocalMatrix(){
@@ -52,16 +53,65 @@ void Mesh::setWorldMatrix(glm::mat4 mat){
 void Mesh::add(Mesh* child){
     children.push_back(child);    
     child->setWorldMatrix(localMatrix);
+    child->updateMatrix();
     child->setParent(this);
+}
+/*
+void Mesh::rotateX(float angle){
+    orientation->setPitch(angle);
+}
+
+void Mesh::rotateY(float angle){
+    orientation->setYaw(angle);
+}
+
+void Mesh::rotateZ(float angle){
+    orientation->setRoll(angle);
+}*/
+
+void Mesh::setRotationOrder(rotationOrder rotOrder){
+    this->rotOrder = rotOrder;
 }
 
 void Mesh::updateMatrix(){
-    glm::mat4 translateMat = glm::translate(glm::mat4(1.0f) , position);
-    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f) , scale);
-    glm::mat4 rotateX = glm::rotate(glm::mat4(1.0f) , rotation.x, glm::vec3(1.0f,.0f,.0f));
-    glm::mat4 rotateY = glm::rotate(glm::mat4(1.0f) , rotation.y, glm::vec3(.0f,1.0f,.0f));
-    glm::mat4 rotateZ = glm::rotate(glm::mat4(1.0f) , rotation.z, glm::vec3(.0f,.0f,1.0f));
-    localMatrix = translateMat * rotateX  * rotateY * rotateZ * scaleMat;
+    glm::mat4 translateMat = glm::translate(glm::mat4(1.0f) , *position);
+    glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f) , *scale);
+    glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f) , rotation->z, glm::vec3(.0f,.0f,1.0f));
+    glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f) , rotation->x, glm::vec3(1.0f,.0f,.0f));
+    glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f) , rotation->y, glm::vec3(.0f,1.0f,.0f));
+
+
+    
+    glm::mat4 rotationMat;
+    
+    switch(rotOrder){
+        /*case(ZXY) : {
+            rotateZ(rotation.z);
+            glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f) , orientation->getRoll(), orientation->getDirection());
+            rotateX(rotation.x);
+            glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f) , orientation->getPitch(), orientation->getRight());
+            rotateY(rotation.y);
+            glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f) , orientation->getYaw(), orientation->getUp());
+            rotationMat = rotationY*rotationX*rotationZ;
+            }
+
+        default:  {
+            rotateZ(rotation.z);
+            glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f) , orientation->getRoll(), orientation->getDirection());
+            rotateX(rotation.x);
+            glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f) , orientation->getPitch(), orientation->getRight());
+            rotateY(rotation.y);
+            glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f) , orientation->getYaw(), orientation->getUp());
+            rotationMat = rotationY*rotationX*rotationZ;
+            }*/
+
+            case(YXZ): rotationMat = rotationY*rotationX*rotationZ;
+            default:  rotationMat = rotationY*rotationX*rotationZ;
+    }
+    //glm::quat myquaternion = glm::quat(glm::vec3(rotation.x, rotation.y, rotation.z));
+    //glm::mat4 rotationMat = glm::toMat4(myquaternion);
+
+    localMatrix = translateMat *rotationMat*  scaleMat;
     
     for(int i= 0; i<children.size(); i++){
         children[i]->setWorldMatrix(localMatrix);        

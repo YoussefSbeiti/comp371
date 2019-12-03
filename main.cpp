@@ -5,6 +5,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <vector>
 #include <glm/gtx/string_cast.hpp>
 #include <string.h>
@@ -16,6 +17,9 @@
 #include "3dObjects/Car.h"
 #include "Material/Material.hpp"
 #include "Mesh/Mesh.hpp"
+#include "Particle System/Particle.hpp"
+#include "Light/PointLight.hpp"
+#include "Light/DirectionalLight.hpp"
 
 
 /*
@@ -35,24 +39,25 @@ float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
+
 Mesh* createGrid()
 {    
-        std::vector<float> vertexArray{50.0f,.0f,-50.0f,
+        std::vector<float> vertexArray{100.0f,.0f,-100.0f,
         .0f,1.0f,.0f,
         //.0f,1.0f,
-        50.0f,.0f,50.0f,
+        100.0f,.0f,100.0f,
         .0f,1.0f,.0f,
         //1.0f,1.0f,
-        -50.0f,.0f,-50.0f,
+        -100.0f,.0f,-100.0f,
         .0f,1.0f,.0f,
         //0.0f,.0f,
-        50.0f,.0f,50.0f,
+        100.0f,.0f,100.0f,
         .0f,1.0f,.0f,
         //1.0f,1.0f,
-        -50.0f,.0f,50.0f,
+        -100.0f,.0f,100.0f,
         .0f,1.0f,.0f,
         //1.0f,.0f,
-        -50.0f,.0f,-50.0f,
+        -100.0f,.0f,-100.0f,
         .0f,1.0f,.0f,
         //.0f,.0f
         };
@@ -69,23 +74,37 @@ Mesh* createGrid()
 }
 
 
-void render(Camera* camera, std::vector<Mesh*>* scene, Shader* shader){
-     
+
+void render(Camera* camera, std::vector<Car*>* cars, Mesh* grid, Shader* shader){
+
+        //Particle* particle = new Particle();
+
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
 
         shader->use();
-        Mesh* car = scene->data()[1]; 
+        //Mesh* car = scene->data()[1]; 
         
         glm::mat4 *view = camera->getViewMatrix();
         glm::mat4 *proj = camera->getProjectionMatrix();
 
         shader->setMat4("view", *view);
         shader->setMat4("projection", *proj);
-        shader->setVec3("lightPos", glm::vec3(0.0f, 30.0f, 0.0f));
         shader->setVec3("viewPos", camera->getPosition());
-        shader->setVec3("lightColor", glm::vec3(1.0f, 1.0f, 204.0f / 255.0f));
+        
+        //shader->setInt("numOfPointLights", 1); 
 
+        /*for (int i = 0; i <= sceneLights->size() - 1; i++){
+            PointLight *element = sceneLights->data()[i];
+            element->lightId = i;
+            element->sendAsSpotlight(shader);
+        }*/
+
+        DirectionalLight* mainLight = new DirectionalLight();
+        mainLight->sendToShader(shader);
+
+        /*
         for (int i = 0; i <= scene->size() - 1; i++)
         {
             Mesh *element = scene->data()[i];
@@ -95,13 +114,25 @@ void render(Camera* camera, std::vector<Mesh*>* scene, Shader* shader){
             for(uint i=0 ; i < children.size() ; i++){
                 children[i]->render(shader);
             }
+
+        }*/
+
+        for (int i = 0; i <= cars->size() - 1; i++)
+        {
+            Car *element = cars->data()[i];
+            
+            element->render(shader);
         }
+        grid->render(shader);
 
 }
 
+//std::vector<float> cylinderPositions {0,0.5,1,0,0,1,0.7071067690849304,0.5,0.7071067690849304,0.7071067690849304,0,0.7071067690849304,1,0.5,0,1,0,0,0.7071067690849304,0.5,-0.7071067690849304,0.7071067690849304,0,-0.7071067690849304,0,0.5,-1,0,0,-1,-0.7071067690849304,0.5,-0.7071067690849304,-0.7071067690849304,0,-0.7071067690849304,-1,0.5,-0,-1,0,-0,-0.7071067690849304,0.5,0.7071067690849304,-0.7071067690849304,0,0.7071067690849304,-0,0.5,1,-0,0,1,0,-0.5,1,0,0,1,0.7071067690849304,-0.5,0.7071067690849304,0.7071067690849304,0,0.7071067690849304,1,-0.5,0,1,0,0,0.7071067690849304,-0.5,-0.7071067690849304,0.7071067690849304,0,-0.7071067690849304,0,-0.5,-1,0,0,-1,-0.7071067690849304,-0.5,-0.7071067690849304,-0.7071067690849304,0,-0.7071067690849304,-1,-0.5,-0,-1,0,-0,-0.7071067690849304,-0.5,0.7071067690849304,-0.7071067690849304,0,0.7071067690849304,-0,-0.5,1,-0,0,1,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,0,0,1,0,0,0.5,1,0,1,0,0.7071067690849304,0.5,0.7071067690849304,0,1,0,1,0.5,0,0,1,0,0.7071067690849304,0.5,-0.7071067690849304,0,1,0,0,0.5,-1,0,1,0,-0.7071067690849304,0.5,-0.7071067690849304,0,1,0,-1,0.5,-0,0,1,0,-0.7071067690849304,0.5,0.7071067690849304,0,1,0,-0,0.5,1,0,1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,0,0,-1,0,0,-0.5,1,0,-1,0,0.7071067690849304,-0.5,0.7071067690849304,0,-1,0,1,-0.5,0,0,-1,0,0.7071067690849304,-0.5,-0.7071067690849304,0,-1,0,0,-0.5,-1,0,-1,0,-0.7071067690849304,-0.5,-0.7071067690849304,0,-1,0,-1,-0.5,-0,0,-1,0,-0.7071067690849304,-0.5,0.7071067690849304,0,-1,0,-0,-0.5,1,0,-1,0};
 
 int main(int argc, char*argv[])
-{
+{   
+    //std::vector<float> transformedCylinder;
+   // glm::mat4 rotMat = glm::rotateZ(glm::radians(90));
     
     // Initialize GLFW and OpenGL version
     glfwInit();
@@ -141,7 +172,7 @@ int main(int argc, char*argv[])
     
     // Compile and link shaders here ...
     Shader * mainShader= new Shader("shaders/vertex.glsl", "shaders/fragment.glsl");
-    Shader * lightShader = new Shader("shaders/lightVertex.glsl" , "shaders/lightFragment.glsl");
+    //Shader * lightShader = new Shader("shaders/lightVertex.glsl" , "shaders/lightFragment.glsl");
 
 
     //Create vertex array object
@@ -152,11 +183,43 @@ int main(int argc, char*argv[])
 
     //SetUp grid and car
     Mesh* grid = createGrid();
-    Car * car  = new Car();
+    std::vector<Car*> cars;
     
     std::vector<Mesh*> scene;    
     scene.push_back(grid);
-    scene.push_back(car->getMesh());
+    
+    std::vector<PointLight*> sceneLights;
+
+    for(int i=0; i <5 ; i++){
+        Car * car  = new Car();
+        
+        car->headLight1->lightId = i;
+        car->tailLight1->lightId =i+5;
+        
+        car->setPosition(glm::vec3(rand()%100 -50.0f , 1.8f, rand()%100 -50.0f ));
+        car->setRotation(glm::radians((float)(rand()%360)));
+
+        //car->setColor(glm::vec3((float) rand() / (RAND_MAX), (float) rand() / (RAND_MAX), (float) rand() / (RAND_MAX)));
+        cars.push_back(car);
+        scene.push_back(car->getMesh());
+        sceneLights.push_back(car->headLight1);
+        sceneLights.push_back(car->tailLight1);
+
+    }
+
+
+    scene.push_back(grid);
+    //scene.push_back(particle);
+
+
+    PointLight* mainLight = new PointLight();
+    mainLight->position = glm::vec3(0.0f, 8.0f, 0.0f);
+    mainLight->color  = glm::vec3(1.0f, 1.0f, 204.0f / 255.0f);
+    mainLight->constant = 0.5;
+    mainLight->linear = 0.01;
+    mainLight->quadratic = 0.0005;
+    
+    //sceneLights.push_back(car->headLight1);
     
 
     // Entering Main Loop
@@ -164,7 +227,9 @@ int main(int argc, char*argv[])
     { 
         //setDepthMap(&scene, lightShader,  depthMapFBO , depthMap);
         
-        render(camera, &scene, mainShader);
+        
+
+        render(camera, &cars, grid, mainShader);
         
         // Detect inputs
         glfwPollEvents();
@@ -177,7 +242,6 @@ int main(int argc, char*argv[])
 
         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) && !(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS))
         {
-
             float rotationX = camera->getPitch();
             camera->setPitch(rotationX - 0.4f);
         }
@@ -190,7 +254,6 @@ int main(int argc, char*argv[])
 
         if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && !(glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS))
         {
-
             float rotationY = camera->getYaw();
             camera->setYaw(rotationY + 0.4f);
         }
@@ -206,21 +269,46 @@ int main(int argc, char*argv[])
         }
 
         if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-            glm::vec3 currentPos = *car->getMesh()->getPosition();
-            car->getMesh()->setPosition(currentPos + glm::vec3(0.0,0.1,0.));
+            //glm::vec3 currentPos = car->getMesh()->getPosition();
+            //car->getMesh()->setPosition(currentPos + glm::vec3(0.0,0.,0.1));
+            cars.data()[1]->moveForward(0.05f);
         }
 
-        if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
-            glm::vec3 currentRot = *car->getMesh()->getRotation();
-            car->getMesh()->setRotation(currentRot + glm::vec3(0.0,0.1,0.));
+        if(glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS){
+            
+            if( cars.data()[1]->activeLight == 1)
+                cars.data()[1]->activeLight = 2;
+            else{
+                cars.data()[1]->activeLight = 1;
+            }
+        }
+
+        if(glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS){
+            //glm::vec3 currentRot = car->getMesh()->getRotation();
+            //car->getMesh()->setRotation(currentRot + glm::vec3(0.0,0.0,0.1));
+            //car->spinFrontWheels();
+           //cars.data()[2]->headLight1->position += glm::vec3(0.0f,0.0f,-.05f);
+           //std::cout << glm::to_string(car->headLight1->position) << std::endl;
+           
+        }
+
+        if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+            //glm::vec3 currentRot = car->getMesh()->getRotation();
+            //car->getMesh()->setRotation(currentRot + glm::vec3(0.0,0.0,0.1));
+            //car->spinFrontWheels();
+           //car->headLight1->position += glm::vec3(0.05f,0.f,.0f);
+           //std::cout << glm::to_string(car->headLight1->position) << std::endl;
+           
+        }
+
+        if(glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS){
+            //car->headLight1->cutOff -= glm::radians(1.0f);
+           //std::cout << glm::to_string(car->headLight1->position) << std::endl;
         }
 
         if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
         {
-            camera->setProjectionMatrix(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 35.0f));
-            camera->setViewMatrix(glm::lookAt(glm::vec3(.0f, 30.0f, .0f),
-                                              glm::vec3(0.0f, 0.0f, 0.0f),
-                                              glm::vec3(0.0f, .0f, 1.0f)));
+            cars.data()[1]->attachCamera(camera);
         }
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

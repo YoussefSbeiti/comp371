@@ -3,6 +3,7 @@
 Camera::Camera(/* args */)
 {
 	updateMatrix();
+
 }
 
 Camera::~Camera()
@@ -79,9 +80,18 @@ void Camera::setUp(glm::vec3 up){
 }
 
 void Camera::updateMatrix(){
-	 direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	 //direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	 //direction.y = sin(glm::radians(pitch));
+	 //direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	 
+	 //direction.x = sin(glm::radians(yaw));
+	 //direction.y = -sin(glm::radians(pitch)) * cos(glm::radians(yaw));
+	 //direction.z = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	 
+	 direction.x = -sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	 direction.y = sin(glm::radians(pitch));
-	 direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	 direction.z = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+
 	 direction = glm::normalize(direction);
 	 // Also re-calculate the Right and Up vector
 	 right = glm::normalize(glm::cross(direction, glm::vec3(.0f,1.0f,0.0f))); // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
@@ -112,4 +122,12 @@ void Camera::setPosition(glm::vec3 pos){
 
 glm::vec3 Camera::getPosition(){
 	return position;
+}
+
+bool Camera::attachedToCar(){
+	return attached;
+}
+
+void Camera::attachToCar(bool val){
+	attached = val;
 }

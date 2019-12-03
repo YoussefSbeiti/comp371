@@ -1,29 +1,39 @@
 #pragma once
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <iostream> 
 #include <vector>
 #include <string>
 #include "../Geometry/Geometry.hpp"
 #include "../Material/Material.hpp"
+//#include "Orientation.hpp"
+
+enum rotationOrder{XYZ , XZY, YXZ, YZX, ZYX , ZXY};
 
 class Mesh{
 
     private:
     Geometry * geometry;
     Material* material;
+    
+    
+    rotationOrder rotOrder;
+    
 
     std::vector<Mesh*> children;
     Mesh* parent;
 
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 rotation = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f,1.0f,1.0f);
+    glm::vec3 *position = new glm::vec3(0.0f);
+    glm::vec3 *rotation = new glm::vec3(0.0f);
+    glm::vec3 *scale = new glm::vec3(1.0f,1.0f,1.0f);
     glm::mat4 localMatrix = glm::mat4(1.0f);
     glm::mat4 worldMatrix = glm::mat4(1.0f);
     
     public:
+    //Orientation* orientation;
+
     
     Mesh(Geometry*  , Material*);
     
@@ -39,7 +49,13 @@ class Mesh{
     glm::vec3 * getPosition();
     
     void setRotation(glm::vec3);
-    glm::vec3 * getRotation();
+    glm::vec3 *  getRotation();
+
+    void rotateX(float angle);
+    void rotateY(float angle);
+    void rotateZ(float angle);
+
+    void setRotationOrder(rotationOrder);
     
     glm::mat4 getLocalMatrix();
     void setLocalMatrix(glm::mat4);

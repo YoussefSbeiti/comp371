@@ -1,3 +1,4 @@
+#pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
@@ -12,17 +13,19 @@ class Camera
 private:
     /* data */
     float pitch = .0f;
-    float yaw = .0f;
+    float yaw = glm::radians(90.0f);
     float roll = .0f;
     float fov = glm::radians(45.0f);
 
     glm::mat4 projectionMatrix = glm::perspective(fov,1.0f,0.1f,200.0f);;
     glm::mat4 viewMatrix = glm::mat4(1.0);
 
-    glm::vec3 position = glm::vec3(.0f);
+    glm::vec3 position = glm::vec3(3.0f,5.0f,0.0f);
     glm::vec3 direction = glm::vec3(.0f,.0f,1.0f);
     glm::vec3 up = glm::vec3(.0f,1.0f,.0f);
     glm::vec3 right = glm::vec3(-1.0f,.0f,.0f);
+
+    bool attached= false;
 
 public:
     Camera(/* args */);
@@ -59,4 +62,7 @@ public:
     void setRight(glm::vec3);
 
     void updateMatrix();
+
+    bool attachedToCar();
+    void attachToCar(bool);
 };
